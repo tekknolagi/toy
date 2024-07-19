@@ -91,7 +91,8 @@ class Block(list):
     dummy = opbuilder("dummy")
     lshift = opbuilder("lshift")
 
-def bb_to_str(bb: Block, varprefix: str = "var"):
+def bb_to_str(bb: Block, varprefix: str = "var", state:
+              Optional[dict[Operation, str]] = None):
     # the implementation is not too important,
     # look at the test below to see what the
     # result looks like
@@ -117,13 +118,41 @@ def bb_to_str(bb: Block, varprefix: str = "var"):
             arg_to_str(op.arg(i))
                 for i in range(len(op.args))
         )
-        strop = f"{var} = {op.name}({arguments})"
+        info = ""
+        if state and op in state:
+            info = ":" + state[op]
+        strop = f"{var}{info} = {op.name}({arguments})"
         res.append(strop)
     return "\n".join(res)
+
+class Parity:
+    UNKNOWN = "unknown"
+    EVEN = "even"
+    ODD = "odd"
+
+def compute_parity(block: Block) -> dict[Operation, str]:
+    state = {}
+    for op in block:
+        if op.name == "lshift":
+            state[op] = Parity.EVEN
+        elif op.name == "add":
+            left = state[op.arg(0)]
+            right = state[op.arg(1)]
+            if left == Parity.EVEN and right == Parity.EVEN:
+                state[op] = Parity.EVEN
+            elif left == Parity.ODD and right == Parity.ODD:
+                state[op] = Parity.EVEN
+            else:
+                state[op] = Parity.UNKNOWN
+        else:
+            state[op] = Parity.UNKNOWN
+    return state
 
 block = Block()
 v0 = block.getarg(0)
 v1 = block.getarg(1)
 v2 = block.add(v0, v1)
 v3 = block.lshift(v2, 1)
-print(bb_to_str(block))
+
+parity = compute_parity(block)
+print(bb_to_str(block, state=parity))
