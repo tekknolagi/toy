@@ -184,9 +184,11 @@ def simplify(block: Block, parity: dict[Operation, str]) -> None:
     for op in block:
         if isinstance(op, Operation) and op.name == "bitand":
             arg = op.arg(0)
-            if parity[arg] is EVEN:
-                op.make_equal_to(Constant(0))
-            elif parity[arg] is ODD:
-                op.make_equal_to(Constant(1))
+            mask = op.arg(1)
+            if isinstance(mask, Constant) and mask.value == 1:
+                if parity[arg] is EVEN:
+                    op.make_equal_to(Constant(0))
+                elif parity[arg] is ODD:
+                    op.make_equal_to(Constant(1))
 
 simplify(block, parity)
