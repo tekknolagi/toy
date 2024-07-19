@@ -156,7 +156,7 @@ block = Block()
 v0 = block.getarg(0)
 v1 = block.getarg(1)
 v2 = block.add(v0, v1)
-v3 = block.lshift(v2, 1)
+v3 = block.mul(v2, 2)
 v4 = block.bitand(v3, 1)
 v5 = block.dummy(v4)
 
@@ -168,19 +168,36 @@ def simplify(block: Block) -> Block:
         return parity[value]
     result = Block()
     for op in block:
+        assert op.find() is op
         # Try to simplify
+        should_add = True
         if isinstance(op, Operation) and op.name == "bitand":
             arg = op.arg(0)
             mask = op.arg(1)
             if isinstance(mask, Constant) and mask.value == 1:
-                if parity[arg] is EVEN:
+                if parity_of(arg) is EVEN:
                     op.make_equal_to(Constant(0))
                     continue
-                elif parity[arg] is ODD:
+                elif parity_of(arg) is ODD:
                     op.make_equal_to(Constant(1))
                     continue
-        # Emit
-        result.append(op)
+        elif isinstance(op, Operation) and op.name == "mul":
+            left = op.arg(0)
+            right = op.arg(1)
+            if isinstance(right, Constant) and right.value == 0:
+                op.make_equal_to(Constant(0))
+                continue
+            if isinstance(right, Constant) and right.value == 1:
+                op.make_equal_to(left)
+                continue
+            if isinstance(right, Constant) and right.value == 2:
+                op.make_equal_to(result.lshift(left, 1))
+                should_add = False
+        if should_add:
+            # Emit
+            result.append(op)
+        else:
+            op = op.find()
         # Analyze
         transfer = getattr(Parity, op.name, lambda *args: UNKNOWN)
         args = [parity_of(arg.find()) for arg in op.args]
