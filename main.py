@@ -92,8 +92,7 @@ class Block(list):
     lshift = opbuilder("lshift")
     bitand = opbuilder("bitand")
 
-def bb_to_str(bb: Block, varprefix: str = "var", state:
-              Optional[dict[Operation, str]] = None):
+def bb_to_str(bb: Block, varprefix: str = "var"):
     # the implementation is not too important,
     # look at the test below to see what the
     # result looks like
@@ -119,10 +118,7 @@ def bb_to_str(bb: Block, varprefix: str = "var", state:
             arg_to_str(op.arg(i))
                 for i in range(len(op.args))
         )
-        info = ""
-        if state and op in state:
-            info = f":{state[op]}"
-        strop = f"{var}{info} = {op.name}({arguments})"
+        strop = f"{var} = {op.name}({arguments})"
         res.append(strop)
     return "\n".join(res)
 
@@ -156,31 +152,23 @@ UNKNOWN = Parity("unknown")
 EVEN = Parity("even")
 ODD = Parity("odd")
 
-def compute_parity(block: Block) -> dict[Operation, str]:
-    state = {}
-    def parity_of(value):
-        if isinstance(value, Constant):
-            return Parity.const(value)
-        return state[value]
-    for op in block:
-        transfer = getattr(Parity, op.name, lambda *args: UNKNOWN)
-        args = [parity_of(arg.find()) for arg in op.args]
-        state[op] = transfer(*args)
-    return state
-
 block = Block()
 v0 = block.getarg(0)
 v1 = block.getarg(1)
 v2 = block.add(v0, v1)
 v3 = block.lshift(v2, 1)
 v4 = block.bitand(v3, 1)
+v5 = block.dummy(v4)
 
-parity = compute_parity(block)
-print(bb_to_str(block, state=parity))
-
-def simplify(block: Block, parity: dict[Operation, str]) -> Block:
+def simplify(block: Block) -> Block:
+    parity = {}
+    def parity_of(value):
+        if isinstance(value, Constant):
+            return Parity.const(value)
+        return parity[value]
     result = Block()
     for op in block:
+        # Try to simplify
         if isinstance(op, Operation) and op.name == "bitand":
             arg = op.arg(0)
             mask = op.arg(1)
@@ -191,9 +179,13 @@ def simplify(block: Block, parity: dict[Operation, str]) -> Block:
                 elif parity[arg] is ODD:
                     op.make_equal_to(Constant(1))
                     continue
+        # Emit
         result.append(op)
+        # Analyze
+        transfer = getattr(Parity, op.name, lambda *args: UNKNOWN)
+        args = [parity_of(arg.find()) for arg in op.args]
+        parity[op] = transfer(*args)
     return result
 
-block = simplify(block, parity)
-parity = compute_parity(block)
-print(bb_to_str(block, state=parity))
+block = simplify(block)
+print(bb_to_str(block))
