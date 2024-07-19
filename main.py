@@ -178,7 +178,8 @@ v4 = block.bitand(v3, 1)
 parity = compute_parity(block)
 print(bb_to_str(block, state=parity))
 
-def simplify(block: Block, parity: dict[Operation, str]) -> None:
+def simplify(block: Block, parity: dict[Operation, str]) -> Block:
+    result = Block()
     for op in block:
         if isinstance(op, Operation) and op.name == "bitand":
             arg = op.arg(0)
@@ -186,7 +187,13 @@ def simplify(block: Block, parity: dict[Operation, str]) -> None:
             if isinstance(mask, Constant) and mask.value == 1:
                 if parity[arg] is EVEN:
                     op.make_equal_to(Constant(0))
+                    continue
                 elif parity[arg] is ODD:
                     op.make_equal_to(Constant(1))
+                    continue
+        result.append(op)
+    return result
 
-simplify(block, parity)
+block = simplify(block, parity)
+parity = compute_parity(block)
+print(bb_to_str(block, state=parity))
