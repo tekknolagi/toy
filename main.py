@@ -120,36 +120,53 @@ def bb_to_str(bb: Block, varprefix: str = "var", state:
         )
         info = ""
         if state and op in state:
-            info = ":" + state[op]
+            info = f":{state[op]}"
         strop = f"{var}{info} = {op.name}({arguments})"
         res.append(strop)
     return "\n".join(res)
 
 class Parity:
-    UNKNOWN = "unknown"
-    EVEN = "even"
-    ODD = "odd"
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+
+    @staticmethod
+    def const(value):
+        if value.value % 2 == 0:
+            return EVEN
+        else:
+            return ODD
+
+    def add(self, other):
+        if self is EVEN and other is EVEN:
+            return EVEN
+        if self is ODD and other is ODD:
+            return EVEN
+        return UNKNOWN
+
+    def lshift(self, other):
+        if other is ODD:
+            return EVEN
+        return UNKNOWN
+
+UNKNOWN = Parity("unknown")
+EVEN = Parity("even")
+ODD = Parity("odd")
 
 def compute_parity(block: Block) -> dict[Operation, str]:
     state = {}
     for op in block:
-        if op.name == "lshift":
-            numbits = op.arg(1)
-            if isinstance(numbits, Constant) and numbits.value > 0:
-                state[op] = Parity.EVEN
+        transfer = getattr(Parity, op.name, lambda *args: UNKNOWN)
+        args = [arg.find() for arg in op.args]
+        abstract_args = []
+        for arg in args:
+            if isinstance(arg, Constant):
+                abstract_args.append(Parity.const(arg))
             else:
-                state[op] = Parity.UNKNOWN
-        elif op.name == "add":
-            left = state[op.arg(0)]
-            right = state[op.arg(1)]
-            if left == Parity.EVEN and right == Parity.EVEN:
-                state[op] = Parity.EVEN
-            elif left == Parity.ODD and right == Parity.ODD:
-                state[op] = Parity.EVEN
-            else:
-                state[op] = Parity.UNKNOWN
-        else:
-            state[op] = Parity.UNKNOWN
+                abstract_args.append(state[arg])
+        state[op] = transfer(*abstract_args)
     return state
 
 block = Block()
