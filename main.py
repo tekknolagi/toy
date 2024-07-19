@@ -169,7 +169,6 @@ def simplify(block: Block) -> Block:
     result = Block()
     for op in block:
         # Try to simplify
-        should_add = True
         if isinstance(op, Operation) and op.name == "bitand":
             arg = op.arg(0)
             mask = op.arg(1)
@@ -191,13 +190,10 @@ def simplify(block: Block) -> Block:
                 continue
             if isinstance(right, Constant) and right.value == 2:
                 op.make_equal_to(result.lshift(left, 1))
-                should_add = False
-        if should_add:
-            # Emit
-            assert op.find() is op
-            result.append(op)
+        if (new := op.find()) is op:
+            result.append(new)
         else:
-            op = op.find()
+            op = new
         # Analyze
         transfer = getattr(Parity, op.name, lambda *args: UNKNOWN)
         args = [parity_of(arg.find()) for arg in op.args]
