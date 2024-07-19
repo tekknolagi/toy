@@ -168,7 +168,6 @@ def simplify(block: Block) -> Block:
         return parity[value]
     result = Block()
     for op in block:
-        assert op.find() is op
         # Try to simplify
         should_add = True
         if isinstance(op, Operation) and op.name == "bitand":
@@ -195,6 +194,7 @@ def simplify(block: Block) -> Block:
                 should_add = False
         if should_add:
             # Emit
+            assert op.find() is op
             result.append(op)
         else:
             op = op.find()
