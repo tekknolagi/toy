@@ -92,7 +92,7 @@ class Block(list):
     lshift = opbuilder("lshift")
     bitand = opbuilder("bitand")
 
-def bb_to_str(bb: Block, varprefix: str = "var"):
+def bb_to_str(bb: Block, varprefix: str = "v"):
     # the implementation is not too important,
     # look at the test below to see what the
     # result looks like
