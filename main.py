@@ -134,7 +134,11 @@ def compute_parity(block: Block) -> dict[Operation, str]:
     state = {}
     for op in block:
         if op.name == "lshift":
-            state[op] = Parity.EVEN
+            numbits = op.arg(1)
+            if isinstance(numbits, Constant) and numbits.value > 0:
+                state[op] = Parity.EVEN
+            else:
+                state[op] = Parity.UNKNOWN
         elif op.name == "add":
             left = state[op.arg(0)]
             right = state[op.arg(1)]
