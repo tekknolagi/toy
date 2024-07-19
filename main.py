@@ -158,16 +158,14 @@ ODD = Parity("odd")
 
 def compute_parity(block: Block) -> dict[Operation, str]:
     state = {}
+    def parity_of(value):
+        if isinstance(value, Constant):
+            return Parity.const(value)
+        return state[value]
     for op in block:
         transfer = getattr(Parity, op.name, lambda *args: UNKNOWN)
-        args = [arg.find() for arg in op.args]
-        abstract_args = []
-        for arg in args:
-            if isinstance(arg, Constant):
-                abstract_args.append(Parity.const(arg))
-            else:
-                abstract_args.append(state[arg])
-        state[op] = transfer(*abstract_args)
+        args = [parity_of(arg.find()) for arg in op.args]
+        state[op] = transfer(*args)
     return state
 
 block = Block()
