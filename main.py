@@ -156,7 +156,7 @@ block = Block()
 v0 = block.getarg(0)
 v1 = block.getarg(1)
 v2 = block.add(v0, v1)
-v3 = block.mul(v2, 2)
+v3 = block.lshift(v2, 1)
 v4 = block.bitand(v3, 1)
 v5 = block.dummy(v4)
 
@@ -179,19 +179,7 @@ def simplify(block: Block) -> Block:
                 elif parity_of(arg) is ODD:
                     op.make_equal_to(Constant(1))
                     continue
-        elif isinstance(op, Operation) and op.name == "mul":
-            left = op.arg(0)
-            right = op.arg(1)
-            if isinstance(right, Constant) and right.value == 0:
-                op.make_equal_to(Constant(0))
-                continue
-            if isinstance(right, Constant) and right.value == 1:
-                op.make_equal_to(left)
-                continue
-            if isinstance(right, Constant) and right.value == 2:
-                new = Operation("lshift", [left, Constant(1)])
-                op.make_equal_to(new)
-                op = new
+        # Emit
         result.append(op)
         # Analyze
         transfer = getattr(Parity, op.name, lambda *args: UNKNOWN)
