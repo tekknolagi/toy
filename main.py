@@ -90,6 +90,7 @@ class Block(list):
     getarg = opbuilder("getarg")
     dummy = opbuilder("dummy")
     lshift = opbuilder("lshift")
+    bitand = opbuilder("bitand")
 
 def bb_to_str(bb: Block, varprefix: str = "var", state:
               Optional[dict[Operation, str]] = None):
@@ -174,6 +175,18 @@ v0 = block.getarg(0)
 v1 = block.getarg(1)
 v2 = block.add(v0, v1)
 v3 = block.lshift(v2, 1)
+v4 = block.bitand(v3, 1)
 
 parity = compute_parity(block)
 print(bb_to_str(block, state=parity))
+
+def simplify(block: Block, parity: dict[Operation, str]) -> None:
+    for op in block:
+        if isinstance(op, Operation) and op.name == "bitand":
+            arg = op.arg(0)
+            if parity[arg] is EVEN:
+                op.make_equal_to(Constant(0))
+            elif parity[arg] is ODD:
+                op.make_equal_to(Constant(1))
+
+simplify(block, parity)
