@@ -154,9 +154,12 @@ ODD = Parity("odd")
 
 block = Block()
 v0 = block.getarg(0)
-v1 = block.lshift(v0, 1)
-v2 = block.bitand(v1, 1)
-v3 = block.dummy(v2)
+v1 = block.getarg(1)
+v2 = block.lshift(v0, 1)
+v3 = block.lshift(v1, 1)
+v4 = block.add(v2, v3)
+v5 = block.bitand(v4, 1)
+v6 = block.dummy(v5)
 
 def simplify(block: Block) -> Block:
     parity = {}
