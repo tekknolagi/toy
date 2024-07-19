@@ -189,11 +189,10 @@ def simplify(block: Block) -> Block:
                 op.make_equal_to(left)
                 continue
             if isinstance(right, Constant) and right.value == 2:
-                op.make_equal_to(result.lshift(left, 1))
-        if (new := op.find()) is op:
-            result.append(new)
-        else:
-            op = new
+                new = Operation("lshift", [left, Constant(1)])
+                op.make_equal_to(new)
+                op = new
+        result.append(op)
         # Analyze
         transfer = getattr(Parity, op.name, lambda *args: UNKNOWN)
         args = [parity_of(arg.find()) for arg in op.args]
