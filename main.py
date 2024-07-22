@@ -1,10 +1,13 @@
 from typing import Optional, Any
 
+
 class Value:
     def find(self):
         raise NotImplementedError("abstract")
+
     def _set_forwarded(self, value):
         raise NotImplementedError("abstract")
+
 
 class Operation(Value):
     def __init__(self, name: str, args: list[Value]):
@@ -13,10 +16,7 @@ class Operation(Value):
         self.forwarded = None
 
     def __repr__(self):
-        return (
-            f"Operation({self.name},"
-            f"{self.args}, {self.forwarded})"
-        )
+        return f"Operation({self.name}," f"{self.args}, {self.forwarded})"
 
     def find(self) -> Value:
         # returns the "representative" value of
@@ -65,8 +65,8 @@ class Constant(Value):
         # equal to a constant, it's a compiler bug
         # to find out that it's equal to another
         # constant
-        assert isinstance(value, Constant) and \
-            value.value == self.value
+        assert isinstance(value, Constant) and value.value == self.value
+
 
 class Block(list):
     def opbuilder(opname):
@@ -74,14 +74,15 @@ class Block(list):
             if not isinstance(arg, Value):
                 arg = Constant(arg)
             return arg
+
         def build(self, *args):
             # construct an Operation, wrap the
             # arguments in Constants if necessary
-            op = Operation(opname,
-                [wraparg(arg) for arg in args])
+            op = Operation(opname, [wraparg(arg) for arg in args])
             # add it to self, the basic block
             self.append(op)
             return op
+
         return build
 
     # a bunch of operations we support
@@ -91,6 +92,7 @@ class Block(list):
     dummy = opbuilder("dummy")
     lshift = opbuilder("lshift")
     bitand = opbuilder("bitand")
+
 
 def bb_to_str(bb: Block, varprefix: str = "v"):
     # the implementation is not too important,
@@ -114,13 +116,11 @@ def bb_to_str(bb: Block, varprefix: str = "v"):
         # printing:
         var = f"{varprefix}{index}"
         varnames[op] = var
-        arguments = ", ".join(
-            arg_to_str(op.arg(i))
-                for i in range(len(op.args))
-        )
+        arguments = ", ".join(arg_to_str(op.arg(i)) for i in range(len(op.args)))
         strop = f"{var} = {op.name}({arguments})"
         res.append(strop)
     return "\n".join(res)
+
 
 class Parity:
     def __init__(self, name):
@@ -148,6 +148,7 @@ class Parity:
             return EVEN
         return UNKNOWN
 
+
 UNKNOWN = Parity("unknown")
 EVEN = Parity("even")
 ODD = Parity("odd")
@@ -161,12 +162,15 @@ v4 = block.add(v2, v3)
 v5 = block.bitand(v4, 1)
 v6 = block.dummy(v5)
 
+
 def simplify(block: Block) -> Block:
     parity = {}
+
     def parity_of(value):
         if isinstance(value, Constant):
             return Parity.const(value)
         return parity[value]
+
     result = Block()
     for op in block:
         # Try to simplify
@@ -187,6 +191,7 @@ def simplify(block: Block) -> Block:
         args = [parity_of(arg.find()) for arg in op.args]
         parity[op] = transfer(*args)
     return result
+
 
 block = simplify(block)
 print(bb_to_str(block))
