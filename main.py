@@ -10,9 +10,11 @@ class Value:
 
 
 class Operation(Value):
+    __match_args__ = ("name", "args")
+
     def __init__(self, name: str, args: list[Value]):
         self.name = name
-        self.args = args
+        self._args = args
         self.forwarded = None
 
     def __repr__(self):
@@ -31,10 +33,14 @@ class Operation(Value):
             op = next
         return op
 
+    @property
+    def args(self):
+        return tuple(arg.find() for arg in self._args)
+
     def arg(self, index):
         # change to above: return the
         # representative of argument 'index'
-        return self.args[index].find()
+        return self._args[index].find()
 
     def make_equal_to(self, value: Value):
         # this is "union" in the union-find sense,
@@ -51,6 +57,8 @@ class Operation(Value):
 
 
 class Constant(Value):
+    __match_args__ = ("value",)
+
     def __init__(self, value: Any):
         self.value = value
 
@@ -187,10 +195,8 @@ def simplify(block: Block) -> Block:
     result = Block()
     for op in block:
         # Try to simplify
-        if isinstance(op, Operation) and op.name == "bitand":
-            arg = op.arg(0)
-            mask = op.arg(1)
-            if isinstance(mask, Constant) and mask.value == 1:
+        match op:
+            case Operation("bitand", [arg, Constant(1)]) | Operation("bitand", [Constant(1), arg]):
                 if parity_of(arg) is EVEN:
                     op.make_equal_to(Constant(0))
                     continue
