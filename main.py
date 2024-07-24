@@ -136,6 +136,12 @@ class Parity:
         else:
             return ODD
 
+    def getarg(self):
+        return TOP
+
+    def dummy(self):
+        return TOP
+
     def add(self, other):
         if self is BOTTOM or other is BOTTOM:
             return BOTTOM
