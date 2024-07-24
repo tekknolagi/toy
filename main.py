@@ -137,21 +137,28 @@ class Parity:
             return ODD
 
     def add(self, other):
+        if self is BOTTOM or other is BOTTOM:
+            return BOTTOM
+        if self is TOP or other is TOP:
+            return TOP
         if self is EVEN and other is EVEN:
             return EVEN
         if self is ODD and other is ODD:
             return EVEN
-        return UNKNOWN
+        return ODD
 
     def lshift(self, other):
+        if self is BOTTOM or other is BOTTOM:
+            return BOTTOM
         if other is ODD:
             return EVEN
-        return UNKNOWN
+        return TOP
 
 
-UNKNOWN = Parity("unknown")
+TOP = Parity("top")
 EVEN = Parity("even")
 ODD = Parity("odd")
+BOTTOM = Parity("bottom")
 
 block = Block()
 v0 = block.getarg(0)
@@ -164,7 +171,7 @@ v6 = block.dummy(v5)
 
 
 def simplify(block: Block) -> Block:
-    parity = {}
+    parity = {v: BOTTOM for v in block}
 
     def parity_of(value):
         if isinstance(value, Constant):
@@ -187,7 +194,7 @@ def simplify(block: Block) -> Block:
         # Emit
         result.append(op)
         # Analyze
-        transfer = getattr(Parity, op.name, lambda *args: UNKNOWN)
+        transfer = getattr(Parity, op.name)
         args = [parity_of(arg.find()) for arg in op.args]
         parity[op] = transfer(*args)
     return result
