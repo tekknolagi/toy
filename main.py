@@ -35,7 +35,7 @@ class Operation(Value):
 
     @property
     def args(self):
-        return list(arg.find() for arg in self._args)
+        return tuple(arg.find() for arg in self._args)
 
     def arg(self, index):
         # change to above: return the
