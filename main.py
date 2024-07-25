@@ -223,7 +223,7 @@ def simplify(block: Block) -> Block:
         cse[name_args] = op
         # Analyze
         transfer = getattr(Parity, op.name)
-        args = [parity_of(arg.find()) for arg in op.args]
+        args = [parity_of(arg) for arg in op.args]
         parity[op] = transfer(*args)
     return result
 
