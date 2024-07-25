@@ -76,8 +76,21 @@ class Constant(Value):
         assert isinstance(value, Constant) and value.value == self.value
 
 
+class Meta(type):
+    def __instancecheck__(cls, instance):
+        return isinstance(instance, Operation) and instance.name == cls.__name__
+
+__opbuilder_classes__ = {}
+
+
 class Block(list):
+
     def opbuilder(opname):
+        cls = __opbuilder_classes__.get(opname)
+        if cls is None:
+            cls = __opbuilder_classes__[opname] = Meta(opname, (Operation,), {"__match_args__": ("args",)})
+            globals()[opname] = cls
+
         def wraparg(arg):
             if not isinstance(arg, Value):
                 arg = Constant(arg)
@@ -196,7 +209,7 @@ def simplify(block: Block) -> Block:
     for op in block:
         # Try to simplify
         match op:
-            case Operation("bitand", [arg, Constant(1)]) | Operation("bitand", [Constant(1), arg]):
+            case bitand([arg, Constant(1)]) | bitand([Constant(1), arg]):
                 if parity_of(arg) is EVEN:
                     op.make_equal_to(Constant(0))
                     continue
