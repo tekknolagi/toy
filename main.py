@@ -190,6 +190,27 @@ v5 = block.bitand(v4, 1)
 v6 = block.dummy(v5)
 
 
+def interp(block, args):
+    values = {}
+    def value_of(value):
+        if isinstance(value, Constant):
+            return value.value
+        return values[value]
+    for op in block:
+        match op:
+            case Operation("getarg", [Constant(index)]):
+                values[op] = args[index]
+            case Operation("add", [a, b]):
+                values[op] = value_of(a) + value_of(b)
+            case Operation("lshift", [a, b]):
+                values[op] = value_of(a) << value_of(b)
+            case Operation("bitand", [a, b]):
+                values[op] = value_of(a) & value_of(b)
+            case Operation("dummy", [a]):
+                values[op] = value_of(a)
+    return values[block[-1]]
+
+
 def simplify(block: Block) -> Block:
     parity = {v: BOTTOM for v in block}
     cse = {}
