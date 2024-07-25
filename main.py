@@ -80,6 +80,7 @@ class Meta(type):
     def __instancecheck__(cls, instance):
         return isinstance(instance, Operation) and instance.name == cls.__name__
 
+
 class Block(list):
 
     def opbuilder(opname):
