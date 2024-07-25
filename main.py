@@ -215,6 +215,9 @@ def simplify(block: Block) -> Block:
                 elif parity_of(arg) is ODD:
                     op.make_equal_to(Constant(1))
                     continue
+            case Operation("add", [Constant(l), Constant(r)]):
+                op.make_equal_to(Constant(l + r))
+                continue
         # Emit
         result.append(op)
         cse[name_args] = op
