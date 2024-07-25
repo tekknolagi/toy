@@ -35,7 +35,7 @@ class Operation(Value):
 
     @property
     def args(self):
-        return tuple(arg.find() for arg in self._args)
+        return list(arg.find() for arg in self._args)
 
     def arg(self, index):
         # change to above: return the
@@ -87,9 +87,15 @@ class Block(list):
             return arg
 
         def build(self, *args):
+            # CSE
+            args = [wraparg(arg) for arg in args]
+            args = [arg.find() for arg in args]
+            for instr in self:
+                if instr.name == opname and instr.args == args:
+                    return instr
             # construct an Operation, wrap the
             # arguments in Constants if necessary
-            op = Operation(opname, [wraparg(arg) for arg in args])
+            op = Operation(opname, args)
             # add it to self, the basic block
             self.append(op)
             return op
