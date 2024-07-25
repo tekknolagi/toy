@@ -68,6 +68,9 @@ class Constant(Value):
     def find(self):
         return self
 
+    def __hash__(self):
+        return hash(self.value)
+
     def __eq__(self, other):
         return isinstance(other, Constant) and other.value == self.value
 
@@ -87,15 +90,9 @@ class Block(list):
             return arg
 
         def build(self, *args):
-            # CSE
-            args = [wraparg(arg) for arg in args]
-            args = [arg.find() for arg in args]
-            for instr in self:
-                if instr.name == opname and instr.args == args:
-                    return instr
             # construct an Operation, wrap the
             # arguments in Constants if necessary
-            op = Operation(opname, args)
+            op = Operation(opname, [wraparg(arg) for arg in args])
             # add it to self, the basic block
             self.append(op)
             return op
@@ -195,6 +192,7 @@ v6 = block.dummy(v5)
 
 def simplify(block: Block) -> Block:
     parity = {v: BOTTOM for v in block}
+    cse = {}
 
     def parity_of(value):
         if isinstance(value, Constant):
@@ -203,6 +201,11 @@ def simplify(block: Block) -> Block:
 
     result = Block()
     for op in block:
+        # CSE
+        name_args = (op.name, tuple(op.args))
+        if (prev := cse.get(name_args)) is not None:
+            op.make_equal_to(prev)
+            continue
         # Try to simplify
         match op:
             case Operation("bitand", [arg, Constant(1)]) | Operation("bitand", [Constant(1), arg]):
@@ -214,6 +217,7 @@ def simplify(block: Block) -> Block:
                     continue
         # Emit
         result.append(op)
+        cse[name_args] = op
         # Analyze
         transfer = getattr(Parity, op.name)
         args = [parity_of(arg.find()) for arg in op.args]
