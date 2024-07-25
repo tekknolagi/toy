@@ -80,16 +80,13 @@ class Meta(type):
     def __instancecheck__(cls, instance):
         return isinstance(instance, Operation) and instance.name == cls.__name__
 
-__opbuilder_classes__ = {}
-
-
 class Block(list):
 
     def opbuilder(opname):
-        cls = __opbuilder_classes__.get(opname)
+        gl = globals()
+        cls = gl.get(opname)
         if cls is None:
-            cls = __opbuilder_classes__[opname] = Meta(opname, (Operation,), {"__match_args__": ("args",)})
-            globals()[opname] = cls
+            gl[opname] = Meta(opname, (Operation,), {"__match_args__": ("args",)})
 
         def wraparg(arg):
             if not isinstance(arg, Value):
