@@ -68,6 +68,9 @@ class Constant(Value):
     def find(self):
         return self
 
+    def __eq__(self, other):
+        return isinstance(other, Constant) and other.value == self.value
+
     def _set_forwarded(self, value: Value):
         # if we found out that an Operation is
         # equal to a constant, it's a compiler bug
